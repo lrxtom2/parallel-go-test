@@ -6,7 +6,6 @@ import (
   "flag"
   "fmt"
   "io"
-  "log"
   "os"
   "os/exec"
   "strings"
@@ -97,14 +96,15 @@ func runWorker(inputQueue <-chan string, messages chan<- string,
 }
 
 func runTest(testName string, binaryName string) string {
-  var stdout = new(bytes.Buffer)
+  var stdResult bytes.Buffer
   cmd := exec.Command(binaryName, "-test.v", "-test.run",
-                      fmt.Sprintf("^%s$", testName), "2>&1")
-  cmd.Stdout = stdout
+                      fmt.Sprintf("^%s$", testName))
+  cmd.Stdout = &stdResult
+  cmd.Stderr = &stdResult
 
   if err := cmd.Run(); err != nil {
-    log.Fatal(err)
+    stdResult.WriteString(err.Error())
   }
 
-  return (*stdout).String()
+  return stdResult.String()
 }
