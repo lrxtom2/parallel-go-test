@@ -1,5 +1,4 @@
 *.test
-teamcity-go-test
 .idea
-*.iml
-tests
+vendor/
+.vscode
