@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
   "bufio"
   "bytes"
   "flag"
@@ -9,6 +10,12 @@ import (
   "os"
   "os/exec"
   "strings"
+)
+
+const (
+  // PackageSummary is the format string for the result summary of pacakge.
+  // [ok|FAIL]    github.com/metacpp/parallel-go-test    100.00s
+  PackageSummary = "%s    %s    %.2fs"
 )
 
 func usage() string {
@@ -59,6 +66,7 @@ func main() {
   messages := make(chan string)
   completed := make(chan struct{})
 
+  startTime := time.Now()
   for i := 0; i < *parallelism; i++ {
     go runWorker(testQueue, messages, completed, *binaryPath)
   }
@@ -69,10 +77,14 @@ func main() {
     }
   }()
 
+  failsCount := 0
   resultsCount := 0
   for {
     select {
     case message := <-messages:
+      if strings.Contains(message, "--- FAIL") {
+        failsCount++
+      }
       fmt.Printf("%s", message)
     case <-completed:
       resultsCount++
@@ -82,6 +94,17 @@ func main() {
       break
     }
   }
+
+  endTime := time.Now()
+  elapsed := endTime.Sub(startTime)
+
+  status := "ok"
+  if failsCount > 0 {
+    status = "FAIL"
+  }
+
+  fmt.Printf(PackageSummary, status, *binaryPath, elapsed.Seconds())
+  
 }
 
 func runWorker(inputQueue <-chan string, messages chan<- string,
@@ -95,15 +118,15 @@ func runWorker(inputQueue <-chan string, messages chan<- string,
   }
 }
 
-func runTest(testName string, binaryName string) string {
+func runTest(testName string, binaryPath string) string {
   var stdResult bytes.Buffer
-  cmd := exec.Command(binaryName, "-test.v", "-test.run",
+  cmd := exec.Command(binaryPath, "-test.v", "-test.run",
                       fmt.Sprintf("^%s$", testName))
   cmd.Stdout = &stdResult
   cmd.Stderr = &stdResult
 
   if err := cmd.Run(); err != nil {
-    stdResult.WriteString(err.Error())
+    stdResult.WriteString(fmt.Sprintf("%s\n", err.Error()))
   }
 
   return stdResult.String()
