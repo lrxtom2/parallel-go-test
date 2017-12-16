@@ -15,7 +15,7 @@ import (
 const (
   // PackageSummary is the format string for the result summary of pacakge.
   // [ok|FAIL]    github.com/metacpp/parallel-go-test    100.00s
-  PackageSummary = "%s    %s    %.2fs\n"
+  PackageSummary = "%s    %s    %.3fs\n"
 )
 
 func usage() string {
