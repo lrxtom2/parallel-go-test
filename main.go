@@ -123,7 +123,7 @@ func runWorker(inputQueue <-chan string, messages chan<- string,
 func runTest(testName string, binaryPath string, timeout int) string {
 	var stdResult bytes.Buffer
 	cmd := exec.Command(binaryPath, "-test.v", "-test.run",
-		fmt.Sprintf("^-test.timeout %d$", timeout),
+		fmt.Sprintf("-test.timeout %d", timeout),
 		fmt.Sprintf("^%s$", testName))
 	cmd.Stdout = &stdResult
 	cmd.Stderr = &stdResult
