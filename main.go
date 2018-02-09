@@ -30,7 +30,7 @@ func usage() string {
 func main() {
 	binaryPath := flag.String("f", "", "file path of test package")
 	parallelism := flag.Int("p", 1, "number of tests to execute in parallel")
-	timeout := flag.Int("t", 3600, "Panit test binary after specific duration(seconds).")
+	timeout := flag.String("t", "3600s", "Panit test binary after specific duration(seconds).")
 	flag.Parse()
 
 	if binaryPath == nil || *binaryPath == "" {
@@ -110,7 +110,7 @@ func main() {
 }
 
 func runWorker(inputQueue <-chan string, messages chan<- string,
-	done chan<- struct{}, binaryName string, timeout int) {
+	done chan<- struct{}, binaryName string, timeout string) {
 	for {
 		select {
 		case testName := <-inputQueue:
@@ -120,11 +120,12 @@ func runWorker(inputQueue <-chan string, messages chan<- string,
 	}
 }
 
-func runTest(testName string, binaryPath string, timeout int) string {
+func runTest(testName string, binaryPath string, timeout string) string {
 	var stdResult bytes.Buffer
-	cmd := exec.Command(binaryPath, "-test.v", "-test.run",
-		fmt.Sprintf("-test.timeout %d", timeout),
-		fmt.Sprintf("^%s$", testName))
+	cmd := exec.Command(binaryPath,
+		"-test.v",
+		"-test.timeout", timeout,
+		"-test.run", fmt.Sprintf("^%s$", testName))
 	cmd.Stdout = &stdResult
 	cmd.Stderr = &stdResult
 
